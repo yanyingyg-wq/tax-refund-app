@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>退税资料自动生成 · 广州狮爪</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif; background:#eef1f6; color:#1f2733; margin:0; padding:0; }
+  .topbar { background:linear-gradient(135deg,#0f4c81,#1b6ca8); color:#fff; padding:18px 0; }
+  .topbar .inner { max-width:780px; margin:0 auto; padding:0 24px; display:flex; align-items:center; gap:14px; }
+  .logo { width:42px; height:42px; border-radius:10px; background:#fff; color:#0f4c81; font-weight:800; font-size:20px;
+          display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+  .topbar h1 { font-size:19px; margin:0; font-weight:700; letter-spacing:.5px; }
+  .topbar .sub { font-size:12.5px; opacity:.85; margin-top:2px; }
+  .wrap { max-width:780px; margin:24px auto; padding:0 24px 40px; }
+  .card { background:#fff; border-radius:14px; padding:26px 30px; box-shadow:0 6px 24px rgba(15,76,129,.10); }
+  h2 { font-size:16px; margin:0 0 4px; color:#0f4c81; }
+  .desc { color:#7a8699; font-size:13px; margin-bottom:18px; }
+  label { display:block; font-weight:600; margin:16px 0 7px; font-size:13.5px; color:#33414f; }
+  input[type=file], input[type=text], input[type=number] {
+    width:100%; padding:10px 12px; border:1px solid #d3dae3; border-radius:8px; font-size:14px; background:#fbfcfe;
+  }
+  input:focus { outline:none; border-color:#1b6ca8; box-shadow:0 0 0 3px rgba(27,108,168,.12); }
+  .row { display:flex; gap:12px; }
+  .row > div { flex:1; }
+  .hint { color:#9aa6b5; font-size:12px; margin-top:5px; }
+  .modes { display:flex; gap:12px; margin-top:8px; }
+  .mode { flex:1; border:2px solid #dce3ec; border-radius:10px; padding:14px; cursor:pointer; transition:.15s; background:#fbfcfe; }
+  .mode:hover { border-color:#9ec3e6; }
+  .mode.active { border-color:#1b6ca8; background:#eaf3fb; box-shadow:0 0 0 3px rgba(27,108,168,.10); }
+  .mode .t { font-weight:700; font-size:14.5px; color:#1f2733; }
+  .mode .d { font-size:12px; color:#7a8699; margin-top:4px; line-height:1.5; }
+  .mode input { display:none; }
+  #rateWrap { display:none; }
+  #rateWrap.show { display:block; }
+  details.buyer { border:1px dashed #cfd6df; border-radius:10px; padding:12px 16px; margin-top:18px; background:#fafbfc; }
+  details.buyer summary { cursor:pointer; font-weight:600; font-size:13px; color:#55657a; }
+  button {
+    margin-top:24px; width:100%; padding:14px; font-size:15.5px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,#0f4c81,#1b6ca8); border:none; border-radius:10px; cursor:pointer; letter-spacing:1px;
+  }
+  button:hover { filter:brightness(1.06); }
+  button:disabled { background:#b9c4d1; cursor:not-allowed; }
+  #status { margin-top:18px; font-size:14px; min-height:22px; }
+  .ok { color:#1e8449; font-weight:600; } .err { color:#c0392b; font-weight:600; } .info { color:#1b6ca8; font-weight:600; }
+  .note { background:#fff8e1; border:1px solid #ffe082; border-radius:9px; padding:11px 15px; font-size:12.5px; color:#7a5b00; margin-bottom:6px; line-height:1.6; }
+  .foot { text-align:center; color:#9aa6b5; font-size:12px; margin-top:22px; }
+  #boot { position:fixed; inset:0; background:rgba(238,241,246,.96); display:flex; align-items:center; justify-content:center; z-index:50; }
+  #boot .box { background:#fff; border-radius:14px; padding:28px 34px; box-shadow:0 10px 40px rgba(15,76,129,.18); max-width:420px; text-align:center; }
+  #boot h3 { margin:0 0 8px; color:#0f4c81; }
+  #boot p { color:#7a8699; font-size:13px; margin:6px 0; }
+  #boot .bar { height:8px; background:#e3e9f1; border-radius:6px; overflow:hidden; margin-top:14px; }
+  #boot .bar > i { display:block; height:100%; width:30%; background:linear-gradient(90deg,#0f4c81,#1b6ca8); border-radius:6px; animation:ind 1.2s infinite ease-in-out; }
+  @keyframes ind { 0%{width:15%} 50%{width:85%} 100%{width:15%} }
+  /* ===== 生成后确认页 ===== */
+  .subhead { font-weight:700; font-size:14px; color:#0f4c81; margin:22px 0 10px; padding-left:10px; border-left:4px solid #1b6ca8; }
+  .summeta { display:flex; flex-wrap:wrap; gap:9px; margin-top:2px; }
+  .chip { background:#eaf3fb; border:1px solid #cfe3f5; color:#0f4c81; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; }
+  .chip b { color:#1f2733; font-weight:700; }
+  .filelist { display:grid; gap:7px; }
+  .fgroup { border:1px solid #e3e9f1; border-radius:9px; padding:10px 14px; background:#fbfcfe; }
+  .fgroup .gt { font-weight:700; font-size:13px; color:#55657a; margin-bottom:5px; }
+  .fgroup .gt span { color:#0f4c81; font-weight:700; }
+  .fgroup .fn { font-size:12.5px; color:#33414f; line-height:1.8; word-break:break-all; }
+  .tblwrap { overflow-x:auto; border:1px solid #e3e9f1; border-radius:9px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; min-width:680px; }
+  th { background:#0f4c81; color:#fff; padding:8px 10px; text-align:left; font-weight:600; white-space:nowrap; }
+  td { padding:7px 10px; border-bottom:1px solid #eef1f6; color:#1f2733; }
+  tr:nth-child(even) td { background:#f7fafc; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  tfoot td { background:#eef5fb; font-weight:700; border-top:2px solid #cfe3f5; }
+  .sumline { margin-top:10px; font-size:13px; color:#55657a; line-height:1.7; }
+  .sumline b { color:#c0392b; }
+  .btns { display:flex; gap:12px; margin-top:24px; }
+  .btns button { margin-top:0; flex:1; }
+  button.ghost { background:#fff; color:#0f4c81; border:2px solid #1b6ca8; }
+  button.ghost:hover { background:#eaf3fb; filter:none; }
+</style>
+</head>
+<body>
+<div id="boot"><div class="box">
+  <h3>退税资料自动生成</h3>
+  <p>本工具在您的浏览器本地运行（Python 引擎），数据不上传任何服务器。</p>
+  <p id="bootMsg">正在加载 Python 运行环境，首次约需 30–60 秒…</p>
+  <div class="bar"><i></i></div>
+</div></div>
+
+<div class="topbar"><div class="inner">
+  <div class="logo">狮</div>
+  <div><h1>退税资料自动生成</h1><div class="sub">广州狮爪网络科技有限公司 · 一站式退税单证</div></div>
+</div></div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>① 先下载模板，填好再上传</h2>
+    <div class="desc">点击下方按钮下载「退税资料模板.xlsx」（纯数据模板）。按模板填写供方与商品信息后，上传即可一键生成全套资料。</div>
+    <button type="button" id="dlTpl" style="background:linear-gradient(135deg,#5a6b7d,#7c8da0)">⬇ 下载「退税资料」模板（.xlsx）</button>
+    <div id="dlStatus" style="margin-top:12px;font-size:13px;min-height:18px;"></div>
+  </div>
+
+  <div class="card" id="cardForm" style="margin-top:20px;">
+    <h2>② 上传退税资料，一键生成全套</h2>
+    <div class="desc">上传填好的「退税资料.xlsx」→ 选择退税模式 → 自动生成 报关单 / 申报要素 / PI单 / 采购合同(.docx) / 出库单(.xlsx)，<b>采购合同与出库单分开输出</b>，打包下载。</div>
+
+    <div class="note">说明：报关单与 PI 的单价/总价按公式换算（÷1.13×1.125；泰国模式再 ÷当月首工作日美金汇率转为美金）。合同与出库单金额与退税资料表一致。申报要素文本标题已居中。所有文件均在您浏览器本地生成。</div>
+
+    <form id="f">
+      <label>退税资料文件（.xlsx）<span style="color:#c0392b">*</span></label>
+      <input type="file" id="file" accept=".xlsx" required>
+
+      <label>退税模式</label>
+      <div class="modes">
+        <label class="mode active" id="mHk"><input type="radio" name="mode" value="hk" checked>
+          <div class="t">🇭🇰 香港模式</div><div class="d">广州出香港正报退税，灰清进泰国（不进公司）· 币制：人民币</div></label>
+        <label class="mode" id="mTh"><input type="radio" name="mode" value="th">
+          <div class="t">🇹🇭 泰国正报</div><div class="d">广州出泰国正报，正清进泰顺公司 · 币制：美金</div></label>
+      </div>
+
+      <div id="rateWrap">
+        <label>当月第一个工作日美金汇率（1 美元兑多少人民币，如 7.18）<span style="color:#c0392b">*</span></label>
+        <input type="number" id="rate" step="0.0001" placeholder="例：7.18">
+        <div class="hint">泰国正报模式必填；香港模式无需填写。</div>
+      </div>
+
+      <details class="buyer">
+        <summary>需方（买方）信息 —— 不填则默认「广州狮爪网络科技有限公司」</summary>
+        <div class="row"><div><label>名称</label><input type="text" id="bn" placeholder="广州狮爪网络科技有限公司"></div>
+          <div><label>法定代表人/代理人签名</label><input type="text" id="bs" placeholder="康小彪"></div></div>
+        <label>单位地址</label><input type="text" id="ba" placeholder="广州市天河区宦溪西路20号611、612房">
+        <div class="row"><div><label>开户行</label><input type="text" id="bb" placeholder="中国银行股份有限公司广州南国花园支行"></div>
+          <div><label>帐号</label><input type="text" id="bac" placeholder="637974294993"></div></div>
+      </details>
+
+      <button type="submit" id="btn">生成退税资料（先确认，再下载）</button>
+    </form>
+    <div id="status"></div>
+  </div>
+
+  <div class="card" id="confirmWrap" style="display:none;margin-top:20px;">
+    <h2>③ 确认生成内容</h2>
+    <div class="desc">以下为本次生成的关键数据，请核对无误后下载。所有文件均在您浏览器本地生成。</div>
+
+    <div class="subhead">本次生成摘要</div>
+    <div id="sumMeta" class="summeta"></div>
+
+    <div class="subhead">生成文件清单（<span id="fileCount">0</span> 个文件）</div>
+    <div id="fileList" class="filelist"></div>
+
+    <div class="subhead">金额数据明细</div>
+    <div class="tblwrap">
+      <table id="dataTbl">
+        <thead><tr>
+          <th>供应商</th><th>品名</th><th>数量</th><th>单位</th>
+          <th>合同单价(¥)</th><th>合同金额(¥)</th><th>报关单价</th><th>报关总价</th>
+        </tr></thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+    <div id="sumLine" class="sumline"></div>
+
+    <div class="btns">
+      <button type="button" id="btnBack" class="ghost">← 返回修改</button>
+      <button type="button" id="btnDl">✓ 确认无误，下载 ZIP</button>
+    </div>
+    <div id="status2" style="margin-top:14px;font-size:14px;min-height:20px;"></div>
+  </div>
+
+  <div class="foot">本工具由内部工作流自动生成 · 数据仅在您的浏览器本地处理，不上传任何服务器</div>
+</div>
+
+<script src="./vendor/jszip.min.js"></script>
+<script src="./pyodide/pyodide.js"></script>
+<script>
+// 容错：部分静态托管把 .wasm 当作 octet-stream 返回，会使 Pyodide 的
+// instantiateStreaming 因 MIME 不符而失败（且无回退）。此处包一层：
+// MIME 正常时走流式编译，否则回退 arrayBuffer 实例化，兼容任意 Content-Type。
+// 注意：Pyodide 传入的 source 是 fetch() 返回的 Promise<Response>（不是 Response），
+// 因此必须用 Promise.resolve(source) 解开后再 clone 预取字节，否则回退会抛错挂死。
+(function(){
+  if (typeof WebAssembly === 'undefined' || !WebAssembly.instantiateStreaming) return;
+  var _iss = WebAssembly.instantiateStreaming.bind(WebAssembly);
+  WebAssembly.instantiateStreaming = function(source, imports){
+    var bufP;
+    try {
+      bufP = Promise.resolve(source).then(function(resp){
+        var c = (resp && typeof resp.clone === 'function') ? resp.clone() : resp;
+        return c.arrayBuffer();
+      });
+    } catch (e) { bufP = Promise.reject(e); }
+    return _iss(source, imports).catch(function(err){
+      console.warn('[shim] streaming instantiation failed, fallback to arrayBuffer:', String((err && err.message) || err));
+      return bufP.then(function(buf){
+        return WebAssembly.instantiate(buf, imports);
+      }).catch(function(e2){
+        console.error('[shim] arrayBuffer fallback failed:', String((e2 && e2.message) || e2));
+        throw e2;
+      });
+    });
+  };
+})();
+// 全局错误显示到加载界面，便于定位问题
+window.addEventListener('error', function(ev){
+  var m = ev && ev.message ? ev.message : (ev && ev.error ? String(ev.error) : '未知错误');
+  setBoot && setBoot('页面错误：' + m);
+});
+window.addEventListener('unhandledrejection', function(ev){
+  var r = ev && ev.reason;
+  var m = r && r.message ? r.message : String(r);
+  setBoot && setBoot('未处理异常：' + m);
+});
+const $ = id => document.getElementById(id);
+let pyodide = null, ready = false;
+
+const DEFAULT_BUYER = {
+  name:'广州狮爪网络科技有限公司', address:'广州市天河区宦溪西路20号611、612房',
+  signer:'康小彪', bank:'中国银行股份有限公司广州南国花园支行', account:'637974294993'
+};
+
+function setStatus(msg, cls){ const s=$('status'); s.className=cls||''; s.textContent=msg; }
+function setBoot(msg){ const b=$('bootMsg'); if(b) b.textContent=msg; }
+
+function download(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function ts(){ return new Date().toISOString().slice(0,19).replace(/[:T]/g,''); }
+function encPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+
+async function deployFiles(){
+  const FS = pyodide.FS;
+  FS.mkdirTree('/tax/templates/参考模版');
+  const tb = await (await fetch('./tax_builder.py')).text();
+  FS.writeFile('/tax/tax_builder.py', tb);
+  const tpls = [
+    'PI_MSMU5432528.xlsx',
+    '退税资料模版.xlsx',
+    '参考模版/供应商简称+出库单+合同编号.xlsx',
+    '参考模版/供应商简称+采购合同+合同编号.docx',
+    '参考模版/品名+申报要素.docx',
+    '参考模版/提柜时间+-+PI单+-+柜号.xlsx',
+    '参考模版/提柜时间+-+报关单+-+柜号.docx',
+  ];
+  for (const f of tpls){
+    const buf = await (await fetch('./assets/templates/'+encPath(f))).arrayBuffer();
+    FS.writeFile('/tax/templates/'+f, new Uint8Array(buf));
+  }
+}
+
+async function ensureReady(){
+  if (ready) return;
+  setBoot('正在加载 Python 运行环境，首次约需 30–60 秒，请稍候…');
+  pyodide = await loadPyodide({ indexURL: new URL('pyodide/', document.baseURI).href });
+  setBoot('正在安装文档生成依赖（python-docx / openpyxl）…');
+  await pyodide.loadPackage('micropip');
+  const mp = pyodide.pyimport('micropip');
+  // 完全离线：从本地 wheels/ 安装（先 lxml C 扩展，再按依赖顺序装纯 Python 包）
+  const manifest = await (await fetch('./wheels/manifest.json')).json();
+  const prefixes = ['lxml', 'typing_extensions', 'et_xmlfile', 'python_docx', 'openpyxl'];
+  const lst = [];
+  for (const p of prefixes) for (const w of manifest) if (w.toLowerCase().startsWith(p)) lst.push(w);
+  for (const w of manifest) if (!lst.includes(w)) lst.push(w);
+  for (const w of lst) await mp.install(new URL('wheels/' + w, document.baseURI).href);
+  setBoot('正在载入模板与生成引擎…');
+  await deployFiles();
+  pyodide.runPython("import sys; sys.path.insert(0,'/tax'); import tax_builder");
+  ready = true;
+  $('boot').style.display = 'none';
+  setStatus('环境就绪 ✓', 'ok');
+}
+
+function collectBuyer(){
+  const raw = { name:$('bn').value, address:$('ba').value, signer:$('bs').value, bank:$('bb').value, account:$('bac').value };
+  const b = Object.assign({}, DEFAULT_BUYER);
+  let changed = false;
+  for (const k in raw){ const v=(raw[k]||'').trim(); if(v){ b[k]=v; changed=true; } }
+  return changed ? b : null;
+}
+
+// 下载模板
+$('dlTpl').addEventListener('click', async () => {
+  const ds = $('dlStatus'); ds.className=''; ds.textContent='正在准备模板…';
+  try {
+    await ensureReady();
+    pyodide.runPython("import tax_builder; tax_builder.export_template('/tmp/tpl.xlsx', sample=False, mode='hk')");
+    const data = pyodide.FS.readFile('/tmp/tpl.xlsx');
+    download(new Blob([data]), '退税资料模板.xlsx');
+    ds.className='ok'; ds.textContent='模板已下载 ✓（退税资料模板.xlsx）';
+  } catch (err){ ds.className='err'; ds.textContent='出错：' + err.message; }
+});
+
+// 模式切换
+document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', () => {
+  $('mHk').classList.toggle('active', r.value==='hk' && r.checked);
+  $('mTh').classList.toggle('active', r.value==='th' && r.checked);
+  $('rateWrap').classList.toggle('show', r.value==='th');
+}));
+
+// 生成
+$('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const status = $('status'); status.className=''; status.textContent='生成中，请稍候…';
+  const btn = $('btn'); btn.disabled = true;
+  const file = $('file').files[0];
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  const rateRaw = $('rate').value.trim();
+  if (!file){ status.className='err'; status.textContent='请先选择退税资料文件'; btn.disabled=false; return; }
+  if (mode==='th' && !rateRaw){ status.className='err'; status.textContent='泰国正报模式需填写美金汇率'; btn.disabled=false; return; }
+  try {
+    await ensureReady();
+    status.className='info'; status.textContent='正在生成全套资料…';
+    const buf = await file.arrayBuffer();
+    pyodide.FS.writeFile('/tmp/in.xlsx', new Uint8Array(buf));
+    const rateArg = rateRaw ? parseFloat(rateRaw) : 'None';
+    const buyer = collectBuyer();
+    const buyerArg = buyer ? JSON.stringify(buyer) : 'None';
+    const code = `
+import tax_builder, os, json
+os.makedirs('/tmp/out', exist_ok=True)
+for fn in os.listdir('/tmp/out'):
+    try: os.remove('/tmp/out/'+fn)
+    except: pass
+rate = ${rateArg}
+buyer = ${buyerArg}
+meta, suppliers, files = tax_builder.build_all('/tmp/in.xlsx', '/tmp/out', th_rate=rate, buyer=buyer, mode='${mode}')
+summary = tax_builder.collect_summary(meta, suppliers, mode='${mode}', rate=rate)
+groups = {}
+for k, v in files.items():
+    groups[k] = [os.path.basename(x) for x in (v if isinstance(v, list) else [v])]
+summary['file_groups'] = groups
+with open('/tmp/summary.json', 'w', encoding='utf-8') as f:
+    json.dump(summary, f, ensure_ascii=False)
+print('GEN_OK', len(files))
+`;
+    pyodide.runPython(code);
+    const summary = JSON.parse(new TextDecoder().decode(pyodide.FS.readFile('/tmp/summary.json')));
+    renderConfirm(summary);
+    $('confirmWrap').style.display = 'block';
+    $('cardForm').style.display = 'none';
+    status.className='ok'; status.textContent='已生成，请核对下方内容后下载 ✓';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err){
+    status.className='err'; status.textContent='生成失败：' + err.message;
+  } finally { btn.disabled = false; }
+});
+
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtNum(v, usd){
+  if (v === '' || v === null || v === undefined) return '—';
+  const n = Number(v);
+  if (!isFinite(n)) return esc(v);
+  const s = n.toLocaleString('zh-CN', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  return (usd ? '$' : '¥') + s;
+}
+function renderConfirm(s){
+  // 摘要
+  const chips = [
+    ['退税模式', s.mode_label + '（币制：' + s.currency + '）'],
+    ['柜号', s.container_no || '—'],
+    ['提柜时间', s.pickup_date || '—'],
+    ['签约日期', s.sign_date || '—'],
+  ];
+  if (s.mode === 'th' && s.rate) chips.push(['美金汇率', String(s.rate)]);
+  $('sumMeta').innerHTML = chips.map(([k,v]) =>
+    '<span class="chip">' + esc(k) + '：<b>' + esc(v) + '</b></span>').join('');
+  // 文件清单（按类型分组）
+  const groups = s.file_groups || {};
+  let cnt = 0;
+  $('fileList').innerHTML = Object.keys(groups).map(k => {
+    const arr = groups[k] || []; cnt += arr.length;
+    return '<div class="fgroup"><div class="gt">' + esc(k) + ' <span>(' + arr.length + ')</span></div>' +
+           '<div class="fn">' + arr.map(esc).join('<br>') + '</div></div>';
+  }).join('');
+  $('fileCount').textContent = cnt;
+  // 金额明细
+  const usd = s.mode === 'th';
+  $('dataTbl').querySelector('tbody').innerHTML = (s.items || []).map(it =>
+    '<tr>' +
+      '<td>' + esc(it.supplier) + '</td>' +
+      '<td>' + esc(it.cn) + '</td>' +
+      '<td class="num">' + esc(it.qty) + '</td>' +
+      '<td>' + esc(it.unit) + '</td>' +
+      '<td class="num">' + fmtNum(it.price) + '</td>' +
+      '<td class="num">' + fmtNum(it.amount) + '</td>' +
+      '<td class="num">' + fmtNum(it.dc_unit, usd) + '</td>' +
+      '<td class="num">' + fmtNum(it.dc_total, usd) + '</td>' +
+    '</tr>').join('');
+  $('dataTbl').querySelector('tfoot').innerHTML =
+    '<tr><td colspan="4">合计</td><td></td>' +
+    '<td class="num">' + fmtNum(s.total_amount) + '</td><td></td>' +
+    '<td class="num">' + fmtNum(s.total_declare, usd) + '</td></tr>';
+  $('sumLine').innerHTML = usd
+    ? '报关单价/总价为 <b>$ 美金</b>（按汇率 ' + esc(s.rate) + ' 由合同人民币价 ÷1.13×1.125 换算）；合同单价/金额为 <b>¥ 人民币</b>。因公式换算存在约 0.43% 系统性偏差，属允许范围。'
+    : '报关单价/总价与合同金额均为 <b>¥ 人民币</b>（报关价 = 合同价 ÷1.13×1.125）。因公式换算存在约 0.43% 系统性偏差，属允许范围。';
+}
+
+// 返回修改
+$('btnBack').addEventListener('click', () => {
+  $('confirmWrap').style.display = 'none';
+  $('cardForm').style.display = 'block';
+  $('status').textContent = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// 确认下载
+$('btnDl').addEventListener('click', async () => {
+  const st = $('status2'); st.className=''; st.textContent='正在打包下载…';
+  try {
+    const names = pyodide.FS.readdir('/tmp/out').filter(n => !['.','..'].includes(n));
+    const zip = new JSZip();
+    for (const n of names){ zip.file(n, pyodide.FS.readFile('/tmp/out/'+n)); }
+    const blob = await zip.generateAsync({ type:'blob' });
+    download(blob, '退税资料_' + ts() + '.zip');
+    st.className='ok'; st.textContent='已下载 ✓（共 '+names.length+' 个文件）';
+  } catch (err){
+    st.className='err'; st.textContent='下载失败：' + err.message;
+  }
+});
+
+// 页面加载即初始化（隐藏遮罩在完成后消失）
+ensureReady().catch(err => { setBoot('初始化失败：'+err.message); });
+</script>
+</body>
+</html>

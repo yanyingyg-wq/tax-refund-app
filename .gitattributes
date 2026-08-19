@@ -1,0 +1,4 @@
+# 保持二进制文件不被 git 做换行符转换，避免损坏 .whl / .wasm / .zip
+*.whl binary
+*.wasm binary
+*.zip binary
