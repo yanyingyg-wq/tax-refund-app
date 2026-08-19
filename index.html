@@ -255,7 +255,8 @@ async function ensureReady(){
   setBoot('正在加载 Python 运行环境，首次约需 30–60 秒，请稍候…');
   pyodide = await loadPyodide({ indexURL: new URL('pyodide/', document.baseURI).href });
   setBoot('正在安装文档生成依赖（python-docx / openpyxl）…');
-  await pyodide.loadPackage('micropip');
+  // 完全离线：从本地 pyodide/ 目录加载 micropip，不再依赖 jsdelivr CDN（国内不可达）
+  await pyodide.loadPackage([new URL('pyodide/micropip-0.11.1-py3-none-any.whl', document.baseURI).href]);
   const mp = pyodide.pyimport('micropip');
   // 完全离线：从本地 wheels/ 安装（先 lxml C 扩展，再按依赖顺序装纯 Python 包）
   const manifest = await (await fetch('./wheels/manifest.json')).json();
